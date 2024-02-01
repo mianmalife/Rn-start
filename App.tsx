@@ -1,102 +1,220 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable react-native/no-inline-styles */
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+/* eslint-disable react/no-unstable-nested-components */
+import React, {useState, useRef, useEffect} from 'react';
+import {Text, View, StyleSheet, Animated, Pressable} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import MetrIcon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
+// import * as Animatable from 'react-native-animatable';
+// @ts-ignore
+import SvgWoodenFish from './WoodenFish.svg';
+import TrackPlayer, {useProgress} from 'react-native-track-player';
+import Sound from 'react-native-sound';
 
-import React, { useCallback, useState } from 'react';
-import { SafeAreaView, ScrollView, Text, View, Alert, Button, Pressable, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
-const defaultList = [{
-  name: '盗墓笔记全集',
-  id: 1,
-}, {
-  name: '鬼吹灯全集',
-  id: 2,
-},{
-  name: '三体',
-  id: 3,
-}, {
-  name: '救世主',
-  id: 4,
-},{
-  name: '山炮',
-  id: 5,
-}, {
-  name: '🚗',
-  id: 6,
-}];
-function wait(duration: number | undefined) {
-  return new Promise(resolve => {
-    setTimeout(resolve, duration);
+const Tab = createBottomTabNavigator();
+
+const playSound = () => {
+  const newSound = new Sound('sound.mp3', Sound.MAIN_BUNDLE, error => {
+    if (error) {
+      console.error('failed to load the sound', error);
+      return;
+    }
+    newSound.setVolume(1);
+    newSound.play(() => {
+      newSound.release();
+    });
   });
-}
-function App(): JSX.Element {
-  const [refreshing, setRefreshing] = useState(false);
-  const [list, setList] = useState(defaultList);
-  const onPressTitle = (name: string) => {
-    Alert.alert(name, name);
-  };
-  const onLongPressTitle = () => {
-    Alert.alert('长按', 'ok');
-  };
-  const onRefresh = () => {
-    setRefreshing(true);
-    wait(2000).then(() => {
-      setRefreshing(false);
-      const copyList = [...list];
-      copyList.unshift({ id: copyList.length + 1, name: `demo${copyList.length + 1}` });
-      setList(copyList);
+};
+function HomeScreen() {
+  const [count, setCount] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
+  const {position} = useProgress();
+  useEffect(() => {
+    const setup = async () => {
+      await TrackPlayer.setupPlayer();
+      await TrackPlayer.stop();
+    };
+    setup();
+  }, []);
+  const animationScale = (value: number) => {
+    return Animated.timing(scale, {
+      toValue: value,
+      duration: 100,
+      useNativeDriver: false,
     });
   };
-  const resetList = () => {
-    setList(defaultList);
-  };
+  async function onPressAdd() {
+    setCount(count + 1);
+    animationScale(0.8).start(() => {
+      animationScale(1).start();
+    });
+    playSound();
+  }
+  async function onPlayBgMusic() {
+    if (isPlaying) {
+      await TrackPlayer.pause();
+    } else {
+      await TrackPlayer.add({
+        id: 1,
+        url: 'https://wfish.netlify.app/assets/bgm-ff2cc27b.mp3',
+      });
+      await TrackPlayer.setVolume(0.3);
+      await TrackPlayer.play();
+      await TrackPlayer.seekTo(position);
+    }
+    setIsPlaying(!isPlaying);
+  }
+  function resetCount() {
+    setCount(0);
+  }
   return (
-    <SafeAreaView>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" style={{ backgroundColor: '#DDF2FD', height: '100%' }} refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
-        {
-          list.map((item, index) => <View key={item.id} style={{ display: 'flex', marginTop: index === 0 ? 20 : 0, flexDirection: 'row', justifyContent: 'space-evenly', height: 200, marginBottom: 20 }}>
-            <View style={{ backgroundColor: '#427D9D', width: '90%' }}>
-              <Pressable onPress={() => onPressTitle(item.name)} onLongPress={() => onLongPressTitle()} android_ripple={{ color: '#9BBEC8' }}>
-                <Text style={styles.bookTitle}>{item.name}</Text>
-              </Pressable>
-            </View>
-          </View>)
-        }
-      </ScrollView>
-      <Pressable onPress={resetList} style={styles.resetBtn}>
-        <Text style={{ textAlign: 'center' }}>重置列表</Text>
+    <View style={styles.subPageStyleMu}>
+      <MetrIcon
+        name={!isPlaying ? 'music-off' : 'music-note'}
+        color="#fff"
+        size={30}
+        style={styles.musicIcon}
+        onPress={onPlayBgMusic}
+      />
+      <View>
+        <Animated.View style={{transform: [{scale}]}}>
+          <Text style={styles.countStyle}>{count}</Text>
+        </Animated.View>
+        <Text style={styles.gdText}>功德</Text>
+      </View>
+      <Pressable onPress={onPressAdd}>
+        <SvgWoodenFish width="100" height="100" />
       </Pressable>
-    </SafeAreaView>
+      <Pressable onPress={resetCount} style={styles.resetButtonStyle}>
+        <Text style={styles.resetStyle}>重置</Text>
+      </Pressable>
+    </View>
   );
 }
+
+function SettingsScreen() {
+  return (
+    <View style={styles.subPageStyleEat}>
+      <Text>开发中...</Text>
+    </View>
+  );
+}
+
+function MyTabBar({state, descriptors, navigation}: any) {
+  return (
+    <View style={styles.flexRow}>
+      {state.routes.map((route: any, index: number) => {
+        const {options} = descriptors[route.key];
+        const label = route.name;
+
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+          });
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        return (
+          <Pressable
+            key={index}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? {selected: true} : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            onPress={onPress}
+            style={styles.touchable}>
+            <Icon
+              name={index === 0 ? 'fish-outline' : 'sad-outline'}
+              size={28}
+              color={isFocused ? '#eda314' : '#222'}
+              style={styles.tabBarStyle}
+            />
+            <Text
+              // eslint-disable-next-line react-native/no-inline-styles
+              style={{
+                color: isFocused ? '#eda314' : '#222',
+                textAlign: 'center',
+                fontSize: 10,
+              }}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+function App(): JSX.Element {
+  return (
+    <NavigationContainer>
+      <Tab.Navigator tabBar={props => <MyTabBar {...props} />}>
+        <Tab.Screen name="电子木鱼" component={HomeScreen} />
+        <Tab.Screen name="今天吃什么" component={SettingsScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}
+
 const styles = StyleSheet.create({
-  bookTitle: {
-    color: '#333',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#333',
-    paddingTop: 10,
-    paddingBottom: 10,
+  subPageStyleMu: {
+    flex: 1,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#111',
+    flexDirection: 'column',
   },
-  resetBtn: {
-    width: 80,
-    borderRadius: 40,
+  subPageStyleEat: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  flexRow: {
+    flexDirection: 'row',
+    height: 50,
+  },
+  touchable: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  tabBarStyle: {
+    textAlign: 'center',
+  },
+  gdText: {
+    color: '#444',
+    textAlign: 'center',
+  },
+  countStyle: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 120,
+  },
+  currentGdStyle: {
     position: 'absolute',
-    zIndex: 10,
-    bottom: 30,
-    left: '50%',
-    marginLeft: -40,
-    right: 0,
-    backgroundColor: 'lightgreen',
-    padding: 10,
+    top: 20,
+    left: 20,
+    color: '#fff',
+  },
+  resetButtonStyle: {
+    width: 70,
+    height: 30,
+    backgroundColor: '#fff',
+    borderRadius: 4,
+  },
+  resetStyle: {
+    color: '#000',
+    textAlign: 'center',
+    lineHeight: 30,
+  },
+  musicIcon: {
+    position: 'absolute',
+    right: 20,
+    top: 20,
   },
 });
 
