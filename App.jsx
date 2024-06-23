@@ -1,20 +1,24 @@
-/* eslint-disable react/no-unstable-nested-components */
-import React, {useState, useRef, useEffect} from 'react';
-import {Text, View, StyleSheet, Animated, Pressable} from 'react-native';
-import {NavigationContainer} from '@react-navigation/native';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Animated,
+  Pressable,
+  StatusBar,
+} from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MetrIcon from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/Ionicons';
-// import * as Animatable from 'react-native-animatable';
-// @ts-ignore
 import SvgWoodenFish from './WoodenFish.svg';
-import TrackPlayer, {useProgress} from 'react-native-track-player';
+import TrackPlayer, { useProgress } from 'react-native-track-player';
 import Sound from 'react-native-sound';
 
 const Tab = createBottomTabNavigator();
 
 const playSound = () => {
-  const newSound = new Sound('sound.mp3', Sound.MAIN_BUNDLE, error => {
+  const newSound = new Sound('sound.mp3', Sound.MAIN_BUNDLE, (error) => {
     if (error) {
       console.error('failed to load the sound', error);
       return;
@@ -29,7 +33,7 @@ function HomeScreen() {
   const [count, setCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
-  const {position} = useProgress();
+  const { position } = useProgress();
   useEffect(() => {
     const setup = async () => {
       await TrackPlayer.setupPlayer();
@@ -37,7 +41,7 @@ function HomeScreen() {
     };
     setup();
   }, []);
-  const animationScale = (value: number) => {
+  const animationScale = (value) => {
     return Animated.timing(scale, {
       toValue: value,
       duration: 100,
@@ -72,13 +76,13 @@ function HomeScreen() {
     <View style={styles.subPageStyleMu}>
       <MetrIcon
         name={!isPlaying ? 'music-off' : 'music-note'}
-        color="#fff"
+        color="#333"
         size={30}
         style={styles.musicIcon}
         onPress={onPlayBgMusic}
       />
       <View>
-        <Animated.View style={{transform: [{scale}]}}>
+        <Animated.View style={{ transform: [{ scale }] }}>
           <Text style={styles.countStyle}>{count}</Text>
         </Animated.View>
         <Text style={styles.gdText}>功德</Text>
@@ -101,11 +105,11 @@ function SettingsScreen() {
   );
 }
 
-function MyTabBar({state, descriptors, navigation}: any) {
+function MyTabBar({ state, descriptors, navigation }) {
   return (
     <View style={styles.flexRow}>
-      {state.routes.map((route: any, index: number) => {
-        const {options} = descriptors[route.key];
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
         const label = route.name;
 
         const isFocused = state.index === index;
@@ -124,10 +128,11 @@ function MyTabBar({state, descriptors, navigation}: any) {
           <Pressable
             key={index}
             accessibilityRole="button"
-            accessibilityState={isFocused ? {selected: true} : {}}
+            accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel}
             onPress={onPress}
-            style={styles.touchable}>
+            style={styles.touchable}
+          >
             <Icon
               name={index === 0 ? 'fish-outline' : 'sad-outline'}
               size={28}
@@ -135,12 +140,12 @@ function MyTabBar({state, descriptors, navigation}: any) {
               style={styles.tabBarStyle}
             />
             <Text
-              // eslint-disable-next-line react-native/no-inline-styles
               style={{
                 color: isFocused ? '#eda314' : '#222',
                 textAlign: 'center',
                 fontSize: 10,
-              }}>
+              }}
+            >
               {label}
             </Text>
           </Pressable>
@@ -149,12 +154,27 @@ function MyTabBar({state, descriptors, navigation}: any) {
     </View>
   );
 }
-function App(): JSX.Element {
+function App() {
   return (
     <NavigationContainer>
-      <Tab.Navigator tabBar={props => <MyTabBar {...props} />}>
-        <Tab.Screen name="电子木鱼" component={HomeScreen} />
-        <Tab.Screen name="今天吃什么" component={SettingsScreen} />
+      <StatusBar backgroundColor="#eda314" />
+      <Tab.Navigator tabBar={(props) => <MyTabBar {...props} />}>
+        <Tab.Screen
+          name="电子木鱼"
+          component={HomeScreen}
+          options={{
+            headerStyle: { backgroundColor: '#eda314' },
+            headerTintColor: '#fff',
+          }}
+        />
+        <Tab.Screen
+          name="今天吃什么"
+          component={SettingsScreen}
+          options={{
+            headerStyle: { backgroundColor: '#eda314' },
+            headerTintColor: '#fff',
+          }}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
@@ -165,7 +185,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#111',
     flexDirection: 'column',
   },
   subPageStyleEat: {
@@ -190,7 +209,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   countStyle: {
-    color: '#fff',
+    color: '#333',
     textAlign: 'center',
     fontSize: 120,
   },
@@ -207,9 +226,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   resetStyle: {
-    color: '#000',
+    color: '#fff',
     textAlign: 'center',
     lineHeight: 30,
+    backgroundColor: '#eda314',
   },
   musicIcon: {
     position: 'absolute',
